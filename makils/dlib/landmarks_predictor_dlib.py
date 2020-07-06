@@ -18,8 +18,7 @@
 import cv2
 from tqdm import tqdm
 
-from dlib import rectangle
-import dlib
+from .. import dlib
 from imutils import face_utils
 
 from ..base import LandmarksPredictorBase
