@@ -1,7 +1,19 @@
-import numpy as np
-
-from .predictor_face_base import FaceBoxPredictorBase
-
+# Copyright (C) 2020  Igor Kilbas, Danil Gribanov
+#
+# This file is part of MakiLandmarkSmoother.
+#
+# MakiLandmarkSmoother is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# MakiLandmarkSmoother is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
 
 
 ### The wrapper on landmarks predictors
@@ -11,8 +23,6 @@ class LandmarksPredictorBase:
     def __init__(self):
         pass
 
-    def predict_landmarks(self, face_predictor: FaceBoxPredictorBase, images: list) -> list:
+    def predict_landmarks(self, images: list) -> list:
         pass
 
-    def predict_landmarks_in_certain_space(self, image: np.ndarray, x1: float, y1: float, x2: float, y2: float) -> np.ndarray:
-        pass
