@@ -16,5 +16,5 @@
 # along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from .predictor_landmarks_base import LandmarksPredictorBase
+from .landmarks_predictor_base import LandmarksPredictorBase
 

@@ -28,15 +28,8 @@ from tqdm import tqdm
 
 class LSWGL:
 
-    def __init__(self, predict_landmarks: LandmarksPredictorBase,
-                 image_w: int, image_h: int,
-                 noc=0.06, t_value=None, lambda_value=None
+    def __init__(self, noc=0.06, t_value=None, lambda_value=None
                  ):
-        self._predict_landmarks = predict_landmarks
-
-        self._image_w = image_w
-        self._image_h = image_h
-
         # variables for smoothe stuff
         self._gsv = None
         self._lsv = None
@@ -60,15 +53,15 @@ class LSWGL:
 
         self.number_of_restore = 0
 
-    def smoothe_landmarks(self, images: list) -> list:
+    def smoothe_landmarks(self, landmarks: list) -> list:
         landmarks_list = []
 
-        iterator = tqdm(range(len(images)))
+        iterator = tqdm(range(len(landmarks)))
 
         for i in iterator:
             if i == 0:
                 # array with shape [68, 2]
-                self._fb_landmarks = self._predict_landmarks.predict_landmarks(images[i])
+                self._fb_landmarks = landmarks[i]
                 self._recalculate_variables_landmarks()
                 self._is_landmarks_variable_restored = False
 
@@ -76,7 +69,7 @@ class LSWGL:
                 continue
 
             # array with shape [68, 2]
-            dfb_landmarks = self._predict_landmarks.predict_landmarks([images[i]])
+            dfb_landmarks = landmarks[i]
 
             if len(self._dfb_landmarks) == 0:
                 continue
@@ -90,7 +83,7 @@ class LSWGL:
                 need_to_restore_landmarks = need_to_restore_landmarks.max()
 
             if need_to_restore_landmarks:
-                print('gsv')
+                print(f'Landmarks are restored at {i} iteration')
 
             if need_to_restore_landmarks:
                 self._recalculate_variables_landmarks()
@@ -105,33 +98,6 @@ class LSWGL:
         iterator.close()
         self.__reset_variables()
         return landmarks_list
-
-    def _norm_s(self, x1, y1, x2, y2):
-        half_w = self._image_w / 2.0
-        half_h = self._image_h / 2.0
-        x2 = (x2 / half_w) - 1.0
-        x1 = (x1 / half_w) - 1.0
-        y2 = (y2 / half_h) - 1.0
-        y1 = (y1 / half_h) - 1.0
-        return (x2 - x1) * (y2 - y1)
-
-    def _norm(self, x1, y1, x2, y2):
-        half_w = self._image_w / 2.0
-        half_h = self._image_h / 2.0
-        x2 = (x2 / half_w) - 1.0
-        x1 = (x1 / half_w) - 1.0
-        y2 = (y2 / half_h) - 1.0
-        y1 = (y1 / half_h) - 1.0
-
-        return x1, y1, x2, y2
-
-    def _norm_x(self, x):
-        half_w = self._image_w / 2.0
-        return (x / half_w) - 1.0
-
-    def _norm_y(self, y):
-        half_h = self._image_h / 2.0
-        return (y / half_h) - 1.0
 
     def _calculate_GSV(self):
         # for easy access
