@@ -18,10 +18,10 @@
 import cv2
 from tqdm import tqdm
 
-from .. import dlib
+import dlib
 from imutils import face_utils
 
-from ..base import LandmarksPredictorBase
+from ..base_landmarks import LandmarksPredictorBase
 
 
 class LandmarksPredictorDlib(LandmarksPredictorBase):
