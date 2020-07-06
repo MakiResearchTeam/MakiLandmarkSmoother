@@ -16,25 +16,30 @@
 # along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
 
 
-from .base import LandmarksPredictorBase
 import numpy as np
 
 from tqdm import tqdm
 
 
-### Landmarks smoother with global and local filter
-### LSWGL
+class LandmarkSmoother:
 
+    def __init__(self, noc=0.06, t_value=None, lambda_value=None):
+        """
+        Create Landmarks smoother
 
-class LSWGL:
-
-    def __init__(self, noc=0.06, t_value=None, lambda_value=None
-                 ):
-        # variables for smoothe stuff
-        self._gsv = None
-        self._lsv = None
+        Parameters
+        ----------
+        noc : float
+            Noc (or Number Of Chaos) responsible for a measure of shift landmarks,
+            between previous and current landmarks, usually 0.06 +- 0.1 number is good
+        t_value : float
+            Scale of the GSV (Global shaking value) responsible for movement of the main points,
+            in our case is 4 points for two eyes corners, 1 point for tip of nose and two for mouth corners
+        lambda_value : float
+            Scale of the LSV (Local shaking value) responsible for movement of all landmarks
+        """
+        self.__reset_variables()
         self._noc = noc
-        self._w = None
 
         if t_value is None:
             self._t = 1.0
@@ -47,13 +52,25 @@ class LSWGL:
             self._lamda = lambda_value
 
         self._is_landmarks_variable_restored = False
-
+        # fb - means main landmarks (which we "smoothe", i. e. we accumulating this value)
+        # dfb - current landmarks at the image (which is not "smoothe")
         self._fb_landmarks = None
         self._dfb_landmarks = None
 
-        self.number_of_restore = 0
-
     def smoothe_landmarks(self, landmarks: list) -> list:
+        """
+        Apply smoothe algorithm on `landmarks`
+
+        Parameters
+        ----------
+        landmarks : list
+            List of landmarks, which are should go in the order of the video
+
+        Returns
+        -------
+        list
+            Smoother landmarks in same order as input `landmarks`
+        """
         landmarks_list = []
 
         iterator = tqdm(range(len(landmarks)))
@@ -69,12 +86,7 @@ class LSWGL:
                 continue
 
             # array with shape [68, 2]
-            dfb_landmarks = landmarks[i]
-
-            if len(self._dfb_landmarks) == 0:
-                continue
-            else:
-                self._dfb_landmarks = dfb_landmarks[0]
+            self._dfb_landmarks = landmarks[i]
 
             # Calculate GSV and compare movement of face according to landmarks
             self._calculate_GSV()
@@ -100,6 +112,11 @@ class LSWGL:
         return landmarks_list
 
     def _calculate_GSV(self):
+        """
+        Calculate GSV or Global Shaking Value, which is responsible for movement of the main points,
+        in our case is 4 points for two eyes corners, 1 point for tip of nose and two for mouth corners
+
+        """
         # for easy access
         old = self._fb_landmarks
         new = self._dfb_landmarks
@@ -115,6 +132,7 @@ class LSWGL:
             old[48],  # mouth, left corner
             old[54],  # mouth, right corner
         ], axis=0)
+
         seven_landmarks_new = np.stack([
             new[30],  # top of the nose
 
@@ -127,7 +145,7 @@ class LSWGL:
             new[54],  # mouth, right corner
         ], axis=0)
 
-        # Calclate distance between centre of eyes
+        # Calculate distance between centre of eyes
         mid_left_eye = (old[39] + old[36]) / 2.0
         mid_right_eye = (old[45] + old[42]) / 2.0
         eye_dist = np.sum(np.square(mid_left_eye - mid_right_eye))
@@ -137,6 +155,10 @@ class LSWGL:
         )
 
     def _calculate_lsv(self):
+        """
+        Calculate GSV or Global Shaking Value, which is responsible for movement of all landmarks
+
+        """
         # for easy access
         old = self._fb_landmarks
         new = self._dfb_landmarks
@@ -150,8 +172,13 @@ class LSWGL:
         self._lsv = np.abs(cur_distance - self._gsv)
 
     def _calculate_W(self):
+        """
+        In our case w - is some sort of alpha (or decay) of the Moving average
+
+        """
         self._calculate_lsv()
         if self._gsv > self._noc:
+            # Drop our smoother value, and set value to current landmark
             self._is_landmarks_variable_restored = False
             self._w = np.zeros(68).astype(np.float32)
         else:
@@ -170,13 +197,15 @@ class LSWGL:
             self._fb_landmarks = self._dfb_landmarks
             self._dfb_landmarks = None
 
-        self.number_of_restore += 1
-
     def _recalculate_landmark_variables(self):
         self._calculate_lsv()
         self._is_landmarks_variable_restored = True
 
     def __reset_variables(self):
+        """
+        Set variables, to default value
+
+        """
         self._lsv = None
         self._gsv = None
         self._w = None

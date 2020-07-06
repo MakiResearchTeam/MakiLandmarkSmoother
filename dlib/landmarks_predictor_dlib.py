@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Foobar.  If not, see <https://www.gnu.org/licenses/>.
 
-import numpy as np
 import cv2
 from tqdm import tqdm
 
@@ -26,16 +25,36 @@ from imutils import face_utils
 from ..base import LandmarksPredictorBase
 
 
-
-### The wrapper on landmarks predictors
-
 class LandmarksPredictorDlib(LandmarksPredictorBase):
 
     def __init__(self, path_to_shape: str):
+        """
+        Create wrapper of the landmark predictor from Dlib library
+
+        Parameters
+        ----------
+        path_to_shape : str
+            Path to shape file which is used for initialize landmark predictor,
+            for more information visit original Dlib site
+        """
         self._detector = dlib.get_frontal_face_detector()
         self._landmark_predictor = dlib.shape_predictor(path_to_shape)
 
     def predict_landmarks(self, images: list) -> list:
+        """
+        Predict landmarks at `images`
+
+        Parameters
+        ----------
+        images : list
+            List of images
+
+        Returns
+        -------
+        list
+            List of np.ndarrays which is landmarks to certain image from `images`,
+            return in the same order as input `images`
+        """
         iterator = tqdm(range(len(images)))
         landmarks_np_list = []
 
