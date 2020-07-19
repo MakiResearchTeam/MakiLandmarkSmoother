@@ -23,7 +23,16 @@ from tqdm import tqdm
 
 class LandmarkSmoother:
 
-    def __init__(self, noc=0.06, t_value=None, lambda_value=None):
+    def __init__(self, noc=0.06, t_value=None, lambda_value=None,
+                 index_of_top_nose=30,
+                 index_of_right_eye_right_corner=45,
+                 index_of_right_eye_left_corner=42,
+                 index_of_left_eye_right_corner=39,
+                 index_of_left_eye_left_corner=36,
+                 index_of_mouth_left_corner=48,
+                 index_of_mouth_right_corner=54,
+                 number_of_landmarks=68
+                 ):
         """
         Create Landmarks smoother
 
@@ -37,9 +46,50 @@ class LandmarkSmoother:
             in our case is 4 points for two eyes corners, 1 point for tip of nose and two for mouth corners
         lambda_value : float
             Scale of the LSV (Local shaking value) responsible for movement of all landmarks
+        index_of_top_nose : int
+            Index of the landmarks which is responsible for top nose position,
+            this index us used for calculate LSV/GSV (e. i. for landmarks shift),
+            By default set index of the Dlib library
+        index_of_right_eye_right_corner : int
+            Index of the landmarks which is responsible for right corner of the right eye position,
+            this index us used for calculate LSV/GSV (e. i. for landmarks shift),
+            By default set index of the Dlib library
+        index_of_right_eye_left_corner : int
+            Index of the landmarks which is responsible for left corner of the right eye position,
+            this index us used for calculate LSV/GSV (e. i. for landmarks shift),
+            By default set index of the Dlib library
+        index_of_left_eye_right_corner : int
+            Index of the landmarks which is responsible for right corner of the left eye position,
+            this index us used for calculate LSV/GSV (e. i. for landmarks shift),
+            By default set index of the Dlib library
+        index_of_left_eye_left_corner : int
+            Index of the landmarks which is responsible for left corner of the left eye position,
+            this index us used for calculate LSV/GSV (e. i. for landmarks shift),
+            By default set index of the Dlib library
+        index_of_mouth_left_corner : int
+            Index of the landmarks which is responsible for left corner of the mouth position,
+            this index us used for calculate LSV/GSV (e. i. for landmarks shift),
+            By default set index of the Dlib library
+        index_of_mouth_right_corner : int
+            Index of the landmarks which is responsible for right corner of the mouth position,
+            this index us used for calculate LSV/GSV (e. i. for landmarks shift),
+            By default set index of the Dlib library
+        number_of_landmarks : int
+            Maximum number of landmarks,
+            By default equal to 68, which is usually use
         """
         self.__reset_variables()
         self._noc = noc
+
+        self._index_of_top_nose = index_of_top_nose
+        self._index_of_right_eye_right_corner = index_of_right_eye_right_corner
+        self._index_of_right_eye_left_corner = index_of_right_eye_left_corner
+        self._index_of_left_eye_right_corner = index_of_left_eye_right_corner
+        self._index_of_left_eye_left_corner = index_of_left_eye_left_corner
+        self._index_of_mouth_left_corner = index_of_mouth_left_corner
+        self._index_of_mouth_right_corner = index_of_mouth_right_corner
+
+        self._number_of_landmakrs = number_of_landmarks
 
         if t_value is None:
             self._t = 1.0
@@ -77,7 +127,7 @@ class LandmarkSmoother:
 
         for i in iterator:
             if i == 0:
-                # array with shape [68, 2]
+                # array with shape [number_of_landmarks, 2]
                 self._fb_landmarks = landmarks[i]
                 self._recalculate_variables_landmarks()
                 self._is_landmarks_variable_restored = False
@@ -85,7 +135,7 @@ class LandmarkSmoother:
                 landmarks_list.append(self._fb_landmarks)
                 continue
 
-            # array with shape [68, 2]
+            # array with shape [number_of_landmarks, 2]
             self._dfb_landmarks = landmarks[i]
 
             # Calculate GSV and compare movement of face according to landmarks
@@ -96,8 +146,6 @@ class LandmarkSmoother:
 
             if need_to_restore_landmarks:
                 print(f'Landmarks are restored at {i} iteration')
-
-            if need_to_restore_landmarks:
                 self._recalculate_variables_landmarks()
             else:
                 if not self._is_landmarks_variable_restored:
@@ -122,27 +170,27 @@ class LandmarkSmoother:
         new = self._dfb_landmarks
         # Choose 7 landmarks
         seven_landmarks_old = np.stack([
-            old[30],  # top of the nose
+            old[self._index_of_top_nose],  # top of the nose
 
-            old[45],  # right eye, right corner
-            old[42],  # right eye, left corner
-            old[39],  # left eye, right corner
-            old[36],  # left eye, left corner
+            old[self._index_of_right_eye_right_corner],  # right eye, right corner
+            old[self._index_of_right_eye_left_corner],  # right eye, left corner
+            old[self._index_of_left_eye_right_corner],  # left eye, right corner
+            old[self._index_of_left_eye_left_corner],  # left eye, left corner
 
-            old[48],  # mouth, left corner
-            old[54],  # mouth, right corner
+            old[self._index_of_mouth_left_corner],  # mouth, left corner
+            old[self._index_of_mouth_right_corner],  # mouth, right corner
         ], axis=0)
 
         seven_landmarks_new = np.stack([
-            new[30],  # top of the nose
+            new[self._index_of_top_nose],  # top of the nose
 
-            new[45],  # right eye, right corner
-            new[42],  # right eye, left corner
-            new[39],  # left eye, right corner
-            new[36],  # left eye, left corner
+            new[self._index_of_right_eye_right_corner],  # right eye, right corner
+            new[self._index_of_right_eye_left_corner],  # right eye, left corner
+            new[self._index_of_left_eye_right_corner],  # left eye, right corner
+            new[self._index_of_left_eye_left_corner],  # left eye, left corner
 
-            new[48],  # mouth, left corner
-            new[54],  # mouth, right corner
+            new[self._index_of_mouth_left_corner],  # mouth, left corner
+            new[self._index_of_mouth_right_corner],  # mouth, right corner
         ], axis=0)
 
         # Calculate distance between centre of eyes
@@ -163,8 +211,8 @@ class LandmarkSmoother:
         old = self._fb_landmarks
         new = self._dfb_landmarks
         # Calclate distance between centre of eyes
-        mid_left_eye = (old[39] + old[36]) / 2.0
-        mid_right_eye = (old[45] + old[42]) / 2.0
+        mid_left_eye = (old[self._index_of_left_eye_right_corner] + old[self._index_of_left_eye_left_corner]) / 2.0
+        mid_right_eye = (old[self._index_of_right_eye_right_corner] + old[self._index_of_right_eye_left_corner]) / 2.0
         eye_dist = np.sum(np.square(mid_left_eye - mid_right_eye))
 
         cur_distance = np.sqrt(np.sum(np.square(old - new), axis=1) / eye_dist)
@@ -180,7 +228,7 @@ class LandmarkSmoother:
         if self._gsv > self._noc:
             # Drop our smoother value, and set value to current landmark
             self._is_landmarks_variable_restored = False
-            self._w = np.zeros(68).astype(np.float32)
+            self._w = np.zeros(self._number_of_landmakrs).astype(np.float32)
         else:
             self._w = self._lamda * self._lsv + self._t * self._gsv
 
